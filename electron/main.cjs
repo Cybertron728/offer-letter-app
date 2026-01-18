@@ -1,6 +1,5 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const isDev = require('electron-is-dev');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -13,7 +12,7 @@ function createWindow() {
         icon: path.join(__dirname, '../public/icon.png') // Placeholder
     });
 
-    if (isDev) {
+    if (!app.isPackaged) {
         win.loadURL('http://localhost:5173');
         win.webContents.openDevTools();
     } else {
