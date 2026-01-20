@@ -14,7 +14,6 @@ const SalaryCertificate = () => {
         startDate: '01-April-2024',
         jobTitle: 'Foreign Food Cook',
         salaryAmount: '6900',
-        salaryWords: 'Six thousand nine hundred',
         signatoryName: 'Keya Pithva',
         signatoryTitle: 'HR Manager',
         groupName: 'Qazaq Restaurant Group',
@@ -81,13 +80,9 @@ const SalaryCertificate = () => {
         return result.trim();
     };
 
-    useEffect(() => {
-        const words = numberToWords(formData.salaryAmount);
-        if (words) {
-            const capitalizedWords = words.charAt(0).toUpperCase() + words.slice(1);
-            setFormData(prev => ({ ...prev, salaryWords: capitalizedWords }));
-        }
-    }, [formData.salaryAmount]);
+    // Calculate salary words derived state
+    const rawSalaryWords = numberToWords(formData.salaryAmount);
+    const salaryWords = rawSalaryWords ? rawSalaryWords.charAt(0).toUpperCase() + rawSalaryWords.slice(1) : '';
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -104,8 +99,23 @@ const SalaryCertificate = () => {
         n.toLowerCase().includes(nationalitySearch.toLowerCase())
     );
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = async () => {
+        // Check if running in Electron with our API
+        if (window.electronAPI?.printToPDF) {
+            const result = await window.electronAPI.printToPDF({
+                filename: `Salary_Certificate_${formData.employeeName.replace(/\s+/g, '_')}.pdf`
+            });
+            if (result.success) {
+                console.log('PDF saved to:', result.filePath);
+            } else if (!result.canceled) {
+                console.error('PDF generation failed:', result.error);
+                // Fallback to window.print if PDF generation fails
+                window.print();
+            }
+        } else {
+            // Fallback for browser or if Electron API not available
+            window.print();
+        }
     };
 
     return (
@@ -236,7 +246,7 @@ const SalaryCertificate = () => {
                     <div>
                         <label className="block text-[11px] font-semibold text-slate-500 mb-1 italic">Salary in Words (Automatic)</label>
                         <div className="p-2 bg-slate-50 border border-dashed border-slate-200 rounded text-xs text-slate-600">
-                            {formData.salaryWords}
+                            {salaryWords}
                         </div>
                     </div>
                 </div>
@@ -298,43 +308,43 @@ const SalaryCertificate = () => {
             </div>
 
             {/* Certificate Preview Area */}
-            <div className="flex-1 flex justify-center p-4 md:p-12 overflow-y-auto bg-slate-200 print:bg-white print:p-0">
-                <div className="bg-white shadow-2xl w-[210mm] min-h-[330mm] p-[25mm] pb-[60mm] box-border relative print:shadow-none print:m-0 print:border-none border border-slate-300">
+            <div className="flex-1 flex justify-center p-4 md:p-12 overflow-y-auto bg-slate-200 print:bg-white print:p-0 print:overflow-visible print:block">
+                <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[18mm] box-border print:shadow-none print:m-0 print:border-none print:min-h-0 border border-slate-300">
 
                     {/* Header */}
-                    <div className="text-center mb-10 border-b border-slate-100 pb-8">
-                        <h1 className="text-6xl font-bold lowercase tracking-wide text-[#a65d3b] font-['Outfit'] mb-4">
+                    <div className="text-center mb-6 border-b border-slate-100 pb-5">
+                        <h1 className="text-5xl font-bold lowercase tracking-wide text-[#a65d3b] font-['Outfit'] mb-2">
                             bakerist
                         </h1>
-                        <h2 className="text-xl font-bold text-gray-800 tracking-widest uppercase mb-1">
+                        <h2 className="text-lg font-bold text-gray-800 tracking-widest uppercase mb-1">
                             {formData.companyHeader}
                         </h2>
-                        <h1 className="text-4xl font-serif text-black border-y-2 border-black py-4 my-6 uppercase tracking-wider">
+                        <h1 className="text-3xl font-serif text-black border-y-2 border-black py-3 my-4 uppercase tracking-wider">
                             Salary Certificate
                         </h1>
-                        <div className="text-sm text-gray-700 flex flex-wrap justify-center gap-x-6">
-                            <span className="flex items-center gap-1.5 font-medium"><MapPin size={14} /> {formData.companyAddress}</span>
-                            <span className="flex items-center gap-1.5 font-medium"><Phone size={14} /> Tel: {formData.companyTel}</span>
+                        <div className="text-xs text-gray-700 flex flex-wrap justify-center gap-x-4">
+                            <span className="flex items-center gap-1 font-medium"><MapPin size={12} /> {formData.companyAddress}</span>
+                            <span className="flex items-center gap-1 font-medium"><Phone size={12} /> Tel: {formData.companyTel}</span>
                         </div>
-                        <div className="text-[13px] text-gray-600 mt-2 italic max-w-xl mx-auto leading-tight font-serif">
+                        <div className="text-xs text-gray-600 mt-2 italic max-w-xl mx-auto leading-tight font-serif">
                             {formData.companyBranch}
                         </div>
-                        <div className="text-sm text-gray-700 font-medium mt-1">
+                        <div className="text-xs text-gray-700 font-medium mt-1">
                             P.O. Box {formData.poBox}
                         </div>
                     </div>
 
                     {/* Date & Subject */}
-                    <div className="mb-12">
-                        <p className="font-bold text-black text-lg">Date : {formData.date}</p>
+                    <div className="mb-5">
+                        <p className="font-bold text-black text-base">Date : {formData.date}</p>
                     </div>
 
-                    <div className="mb-10">
-                        <h3 className="text-xl font-bold border-b-2 border-black inline-block uppercase tracking-tight pb-1">Subject: Salary Certificate</h3>
+                    <div className="mb-5">
+                        <h3 className="text-lg font-bold border-b-2 border-black inline-block uppercase tracking-tight pb-1">Subject: Salary Certificate</h3>
                     </div>
 
                     {/* Body Content */}
-                    <div className="text-black leading-[2] text-justify space-y-8 text-[16px] font-serif">
+                    <div className="text-black leading-loose text-justify space-y-5 text-[15px] font-serif">
                         <p>
                             This is to certify that <span className="font-bold underline">{formData.salutation} {formData.employeeName}</span>,
                             with <span className="font-bold">{formData.nationality}</span> nationality Emirates id No :
@@ -347,7 +357,7 @@ const SalaryCertificate = () => {
                         <p>
                             {formData.salutation === 'Mr.' ? 'He' : 'She'} draws a total salary of
                             <span className="font-bold bg-slate-50 px-1 border border-slate-100 rounded"> AED {formData.salaryAmount}/- </span>
-                            (<span className="font-bold italic">UAE {formData.salaryWords} only</span>)
+                            (<span className="font-bold italic">UAE {salaryWords} only</span>)
                             per month, including {formData.salutation === 'Mr.' ? 'his' : 'her'} accommodation & transportation.
                         </p>
 
@@ -359,28 +369,30 @@ const SalaryCertificate = () => {
 
                     {/* Signatory Section */}
                     <div className="mt-12">
-                        <div className="border-t-4 border-black w-72 mb-4"></div>
-                        <div className="space-y-4">
-                            <p className="font-bold text-black text-xl">{formData.signatoryName}</p>
-                            <p className="text-gray-800 font-bold text-base">{formData.signatoryTitle}</p>
-                            <p className="text-gray-700 italic font-medium">{formData.groupName}</p>
+                        <div className="border-t-4 border-black w-64 mb-4"></div>
+                        <div className="space-y-2">
+                            <p className="font-bold text-black text-lg">{formData.signatoryName}</p>
+                            <p className="text-gray-800 font-bold text-sm">{formData.signatoryTitle}</p>
+                            <p className="text-gray-700 italic font-medium text-sm">{formData.groupName}</p>
                         </div>
                     </div>
 
                     {/* Footer Contact Info Line */}
-                    <div className="absolute bottom-12 left-[25mm] right-[25mm] border-t-2 border-slate-200 pt-5 text-[11px] text-gray-500 flex justify-between items-center uppercase font-bold tracking-widest">
-                        <div className="flex items-center gap-2">
-                            <MapPin size={11} className="text-slate-400" />
-                            {formData.companyAddress}
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <span className="flex items-center gap-2">
-                                <Phone size={11} className="text-slate-400" />
-                                {formData.companyTel}
-                            </span>
-                            <span>
-                                P.O. BOX {formData.poBox}
-                            </span>
+                    <div className="mt-auto pt-12">
+                        <div className="border-t-2 border-slate-200 pt-4 text-[10px] text-gray-500 flex justify-between items-center uppercase font-bold tracking-widest">
+                            <div className="flex items-center gap-2">
+                                <MapPin size={10} className="text-slate-400" />
+                                {formData.companyAddress}
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="flex items-center gap-1">
+                                    <Phone size={10} className="text-slate-400" />
+                                    {formData.companyTel}
+                                </span>
+                                <span>
+                                    P.O. BOX {formData.poBox}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -73,12 +73,27 @@ const OfferLetter = () => {
         Number(formData.telephoneAllowance) +
         Number(formData.otherAllowance);
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = async () => {
+        // Check if running in Electron with our API
+        if (window.electronAPI?.printToPDF) {
+            const result = await window.electronAPI.printToPDF({
+                filename: `Offer_Letter_${formData.candidateName.replace(/\s+/g, '_')}.pdf`
+            });
+            if (result.success) {
+                console.log('PDF saved to:', result.filePath);
+            } else if (!result.canceled) {
+                console.error('PDF generation failed:', result.error);
+                // Fallback to window.print if PDF generation fails
+                window.print();
+            }
+        } else {
+            // Fallback for browser or if Electron API not available
+            window.print();
+        }
     };
 
     return (
-        <div className="h-full bg-gray-100 flex flex-col md:flex-row">
+        <div className="h-full bg-gray-100 flex flex-col md:flex-row print:h-auto print:block">
             {/* Sidebar Editor - Hidden during print */}
             <div className="w-full md:w-1/3 bg-white p-6 shadow-xl overflow-y-auto h-full print:hidden">
                 <div className="flex items-center gap-2 mb-6 border-b pb-4">
@@ -340,7 +355,7 @@ const OfferLetter = () => {
             </div>
 
             {/* Letter Preview */}
-            <div className="flex-1 overflow-y-auto bg-gray-200 p-4 md:p-12 print:p-0 print:bg-white">
+            <div className="flex-1 overflow-y-auto bg-gray-200 p-4 md:p-12 print:p-0 print:bg-white print:overflow-visible">
                 <div className="bg-white mx-auto shadow-2xl p-8 md:p-16 min-h-[1100px] max-w-[850px] print:shadow-none print:max-w-none print:w-full font-serif text-gray-900 leading-relaxed">
 
                     {/* Header */}
